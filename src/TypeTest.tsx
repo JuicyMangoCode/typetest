@@ -1,19 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import style from "./TypeTest.module.css";
 import typeSound from "./assets/button-press.mp3";
 
 const TypeTest = () => {
     const [quote, setQuote] = useState("");
     const [userInput, setUserInput] = useState("");
+    const [startTime, setStartTime] = useState<number | null>(null);
+    const [endTime, setEndTime] = useState<number | null>(null);
+    const [wpm, setWpm] = useState<number | null>(null);
+    const audioRef = useRef(new Audio(typeSound));
 
     useEffect(() => {
-        async function getRandomQuote() {
-            const res = await fetch(
-                "https://corsproxy.io/?url=https://zenquotes.io/api/random/"
-            );
-            const data = await res.json();
+        audioRef.current.volume = 0.1;
 
-            setQuote(data[0].q);
+        async function getRandomQuote() {
+            try {
+                const res = await fetch(
+                    "https://corsproxy.io/?url=https://zenquotes.io/api/random/"
+                );
+
+                if (!res.ok) throw new Error("Failed to fetch quote");
+
+                const data = await res.json();
+
+                setQuote(data[0].q);
+            } catch (error) {
+                setQuote("The quick brown fox jumps over the lazy dog.");
+                console.error("Error fetching quote:", error);
+            }
         }
 
         getRandomQuote();
@@ -43,6 +57,10 @@ const TypeTest = () => {
     }
 
     function handleInputChange(newValue: string) {
+        if (startTime === null) {
+            setStartTime(Date.now());
+        }
+
         if (newValue.length > quote.length) {
             return;
         }
@@ -60,11 +78,20 @@ const TypeTest = () => {
             return;
         }
 
-        const audio = new Audio(typeSound);
-        audio.volume = 0.1;
-        audio.play();
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
 
         setUserInput(newValue);
+
+        if (newValue === quote) {
+            const curTime = Date.now();
+            setEndTime(curTime);
+
+            const timeTaken = (curTime - (startTime ?? curTime)) / 1000;
+            const wordsPerMinute = (quote.split(" ").length / timeTaken) * 60;
+
+            setWpm(wordsPerMinute);
+        }
     }
 
     return (
@@ -76,11 +103,26 @@ const TypeTest = () => {
                     autoFocus
                     type="text"
                     name="input"
+                    onPaste={(e) => e.preventDefault()}
+                    onCut={(e) => e.preventDefault()}
                     className={style.input}
                     value={userInput}
                     onChange={(e) => handleInputChange(e.target.value)}
                 />
             </p>
+
+            <br />
+
+            {wpm !== null && (
+                <p className={style.result}>Your WPM: {wpm.toFixed(2)}</p>
+            )}
+
+            {startTime !== null && endTime !== null && (
+                <p className={style.time}>
+                    Time taken: {((endTime - startTime) / 1000).toFixed(2)}{" "}
+                    seconds
+                </p>
+            )}
         </div>
     );
 };
