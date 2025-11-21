@@ -99,8 +99,9 @@ const TypeTest = () => {
             <p className={userInput === quote ? style.correct : style.phrase}>
                 {renderQuote()}
                 <br />
-                <textarea
+                <input
                     autoFocus
+                    type="text"
                     name="input"
                     onPaste={(e) => e.preventDefault()}
                     onCut={(e) => e.preventDefault()}
