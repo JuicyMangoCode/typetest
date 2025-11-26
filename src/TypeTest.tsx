@@ -57,6 +57,16 @@ const TypeTest = () => {
     }
 
     function handleInputChange(newValue: string) {
+        if (newValue === quote) {
+            const curTime = Date.now();
+            setEndTime(curTime);
+
+            const timeTaken = (curTime - (startTime ?? curTime)) / 1000;
+            const wordsPerMinute = (quote.split(" ").length / timeTaken) * 60;
+
+            setWpm(wordsPerMinute);
+        }
+
         if (startTime === null) {
             setStartTime(Date.now());
         }
@@ -82,16 +92,6 @@ const TypeTest = () => {
         audioRef.current.play();
 
         setUserInput(newValue);
-
-        if (newValue === quote) {
-            const curTime = Date.now();
-            setEndTime(curTime);
-
-            const timeTaken = (curTime - (startTime ?? curTime)) / 1000;
-            const wordsPerMinute = (quote.split(" ").length / timeTaken) * 60;
-
-            setWpm(wordsPerMinute);
-        }
     }
 
     return (
